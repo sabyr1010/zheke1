@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Графика лабораториясы: растр пен вектор</title>
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#fdf8ee;--card:#ffffff;--ink:#2b2d42;--mute:#6b6f85;--r:#ff7a59;--rl:#ffe9e2;--v:#2ba7a0;--vl:#dff5f3;--ok:#3cb371;--bad:#e5484d;--gold:#ffc83d;--line:#eadfc8}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito","Segoe UI",system-ui,Arial,sans-serif;line-height:1.4}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{margin:4px 0;font-size:clamp(22px,5vw,32px);text-align:center}
+.sub{text-align:center;color:var(--mute);margin:0 0 14px}
+.bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.pill{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700}
+.box{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px}
+.zoom{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.view{height:170px;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:14px;border:2px dashed var(--line)}
+.view.r{background:var(--rl)}.view.v{background:var(--vl)}
+#cv{image-rendering:pixelated;width:60px;height:60px}
+#sv{width:60px;height:60px}
+input[type=range]{width:100%;accent-color:var(--r)}
+.tbl{display:grid;grid-template-columns:minmax(80px,.8fr) 1fr 1fr;gap:8px}
+.th{font-weight:800;text-align:center;padding:10px 4px;border-radius:12px}
+.th.r{background:var(--rl);color:#b8431f}.th.v{background:var(--vl);color:#16706a}.th.c{background:#fff1c9}
+.crit{display:flex;align-items:center;font-weight:800;background:#fff1c9;border-radius:12px;padding:8px;font-size:14px}
+.cell{min-height:74px;border:2.5px dashed #cfc3a8;border-radius:12px;background:#fffdf8;font:inherit;font-size:14px;color:var(--ink);cursor:pointer;padding:6px;transition:.15s}
+.cell:hover{border-color:var(--gold);background:#fff9e0}
+.cell.done{border-style:solid;cursor:default;font-weight:700}
+.cell.done.r{border-color:var(--r);background:var(--rl)}.cell.done.v{border-color:var(--v);background:var(--vl)}
+.shake{animation:sh .35s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{background:#fff;border:2.5px solid var(--line);border-radius:14px;padding:9px 12px;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 3px 0 var(--line);max-width:260px;text-align:left;color:var(--ink)}
+.chip.sel{border-color:var(--gold);background:#fff6d6;transform:translateY(-3px)}
+.msg{min-height:26px;text-align:center;font-weight:700;margin:8px 0}
+.big{display:block;margin:10px auto;border:0;border-radius:14px;padding:12px 22px;font:inherit;font-weight:800;font-size:16px;color:#fff;background:var(--r);cursor:pointer;box-shadow:0 4px 0 #c95a3d}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btns .big{margin:0;width:100%}
+.btns .bv{background:var(--v);box-shadow:0 4px 0 #1d7e78}
+.item{font-size:clamp(46px,12vw,72px);text-align:center;margin:4px 0}
+.name{text-align:center;font-size:20px;font-weight:800;margin-bottom:10px}
+.hide{display:none}
+.stars{font-size:38px;text-align:center}
+@media(max-width:560px){.tbl{grid-template-columns:70px 1fr 1fr;gap:5px}.cell{font-size:12px;min-height:90px}.crit{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎨 Графика лабораториясы</h1>
+<p class="sub">Растрлық және векторлық графиканы салыстырып, кестені толтыр!</p>
+<div class="bar"><span class="pill">⭐ Ұпай: <b id="sc">0</b></span><span class="pill">🧩 Кесте: <b id="pg">0</b>/8</span><span class="pill">🎯 Қате: <b id="er">0</b></span></div>
+
+<div class="box">
+<b>🔍 Алдымен тексеріп көр: үлкейтіп көр!</b>
+<div class="zoom" style="margin-top:8px">
+<div><div class="view r"><canvas id="cv" width="12" height="12"></canvas></div><b>Растр ❤️</b></div>
+<div><div class="view v"><svg id="sv" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#e5484d"/></svg></div><b>Вектор ❤️</b></div>
+</div>
+<input type="range" id="zm" min="60" max="400" value="60" aria-label="Үлкейту">
+<div class="sub" style="margin:2px 0 0">Жүгірткіні оңға жылжыт: қайсысының жиегі «сатылы» болып кетеді?</div>
+</div>
+
+<div class="box" id="g1">
+<b>1-деңгей. Кестені толтыр</b>
+<div class="sub" style="margin:2px 0 10px">Төмендегі карточканы таңда, сосын дұрыс ұяшыққа бас 👆</div>
+<div class="tbl" id="tbl"></div>
+<div class="msg" id="msg">Карточканы таңда!</div>
+<div class="pool" id="pool"></div>
+</div>
+
+<div class="box hide" id="g2">
+<b>2-деңгей. Мысалдар: растр ма, вектор ма?</b>
+<div class="sub" style="margin:2px 0">Сұрақ <span id="qn">1</span>/8</div>
+<div class="item" id="em"></div>
+<div class="name" id="nm"></div>
+<div class="btns"><button class="big" id="br">🖼️ Растр</button><button class="big bv" id="bv">✏️ Вектор</button></div>
+<div class="msg" id="m2"></div>
+</div>
+
+<div class="box hide" id="fin">
+<div class="stars" id="st"></div>
+<h2 style="text-align:center;margin:6px 0" id="ft"></h2>
+<p class="sub" id="fs"></p><div class="stars" id="gr" style="font-size:30px"></div><p class="sub">Баға = ұпай ÷ 160 × 10 (10 балдық шкала)</p>
+<button class="big" onclick="location.reload()">🔄 Қайта ойнау</button>
+</div>
+</div>
+
+<script>
+const rows=[
+{k:"Кескіннің құрамы",r:"Түрлі-түсті ұсақ нүктелер — пикселдер торы",v:"Геометриялық фигуралар: сызық, қисық, көпбұрыш (формулалар)"},
+{k:"Масштабтау кезіндегі сапасы",r:"Үлкейткенде сапасы төмендейді, пиксельденеді",v:"Қанша үлкейтсең де сапасы өзгермейді"},
+{k:"Файл көлемі",r:"Көлемі үлкен (пиксель көп болған сайын өседі)",v:"Көлемі аз (тек фигура параметрлері сақталады)"},
+{k:"Бағдарламалары мен форматтары",r:"Photoshop, Paint · JPG, PNG, BMP, GIF",v:"CorelDRAW, Illustrator, Inkscape · SVG, CDR, AI"}
+];
+let sc=0,er=0,pg=0,sel=null;
+const $=id=>document.getElementById(id);
+// zoom demo
+(function(){
+const m=["000000000000","011100001110","111110011111","111111111111","111111111111","111111111111","011111111110","001111111100","000111111000","000011110000","000001100000","000000000000"];
+const c=$("cv").getContext("2d");c.fillStyle="#e5484d";
+m.forEach((s,y)=>[...s].forEach((v,x)=>{if(v==="1")c.fillRect(x,y,1,1)}));
+$("zm").oninput=e=>{const s=e.target.value+"px";$("cv").style.width=s;$("cv").style.height=s;$("sv").style.width=s;$("sv").style.height=s};
+})();
+// table
+const t=$("tbl");
+t.innerHTML='<div class="th c">Белгі</div><div class="th r">🖼️ Растрлық</div><div class="th v">✏️ Векторлық</div>';
+rows.forEach((o,i)=>{
+t.insertAdjacentHTML("beforeend",`<div class="crit">${o.k}</div><button class="cell" data-id="${i}r" data-t="r">❓</button><button class="cell" data-id="${i}v" data-t="v">❓</button>`);
+});
+const cards=[];
+rows.forEach((o,i)=>{cards.push({id:i+"r",t:o.r},{id:i+"v",t:o.v})});
+cards.sort(()=>Math.random()-.5).forEach(cd=>{
+const b=document.createElement("button");b.className="chip";b.textContent=cd.t;b.dataset.id=cd.id;
+b.onclick=()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("sel"));sel=b;b.classList.add("sel");$("msg").textContent="Енді дұрыс ұяшықты таңда 👆"};
+$("pool").appendChild(b);
+});
+function upd(){$("sc").textContent=sc;$("er").textContent=er;$("pg").textContent=pg}
+t.addEventListener("click",e=>{
+const c=e.target.closest(".cell");if(!c||c.classList.contains("done"))return;
+if(!sel){$("msg").textContent="Алдымен төмендегі карточканы таңда 😉";return}
+if(sel.dataset.id===c.dataset.id){
+c.textContent=sel.textContent;c.classList.add("done",c.dataset.t);
+sel.remove();sel=null;sc+=10;pg++;
+const ok=["Тамаша! 🎉","Дұрыс! 👏","Жарайсың! 🌟","Супер! 🚀","Дәл тапты! 🎯"];
+$("msg").textContent=ok[Math.floor(Math.random()*ok.length)];
+if(pg===8){setTimeout(()=>{$("msg").textContent="Кесте дайын! 🏆 Енді 2-деңгей";$("g2").classList.remove("hide");$("g2").scrollIntoView({behavior:"smooth"});nextQ()},700)}
+}else{
+c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake");
+er++;sc=Math.max(0,sc-2);
+$("msg").textContent="Жоқ, қайта ойлан 🤔 Ұяшықтың бағанына және белгісіне қара";
+}
+upd();
+});
+// level 2
+const q=[
+["📷","Отбасылық фотосурет","r","Фотода миллиондаған түс реңдері бар, сондықтан ол пикселдерден тұрады."],
+["🏷️","Компания логотипі","v","Логотипті визит карточкасына да, үлкен баннерге де сапасыз емес етіп шығару керек."],
+["📱","Телефон скриншоты","r","Скриншот — экранның пиксельдік көшірмесі (PNG)."],
+["🔤","Шрифт әріптері","v","Қазіргі шрифттер қисықтармен сипатталады, сондықтан кез келген өлшемде тегіс."],
+["🖼️","Сканерленген суретті құжат","r","Сканер қағазды пикселдер торына айналдырады."],
+["📐","Сызба (чертеж)","v","Сызбада нақты сызықтар мен өлшемдер маңызды, оны CAD векторлық түрде сақтайды."],
+["🤳","Селфи","r","Камера барлық кадрды пикселдермен жазады (JPG)."],
+["🗺️","Қала картасының схемасы","v","Жолдар мен шекаралар — сызықтар мен қисықтар, оларды үлкейтуге болады."]
+];
+let qi=0,ok2=0,lock=false;
+function nextQ(){
+if(qi>=q.length){return finish()}
+$("qn").textContent=qi+1;$("em").textContent=q[qi][0];$("nm").textContent=q[qi][1];$("m2").textContent="";lock=false;
+}
+function ans(a){
+if(lock)return;lock=true;const o=q[qi];
+if(a===o[2]){sc+=10;ok2++;$("m2").textContent="✅ Дұрыс! "+o[3]}
+else{er++;$("m2").textContent="❌ Дұрыс жауап: "+(o[2]==="r"?"растр":"вектор")+". "+o[3]}
+upd();qi++;setTimeout(nextQ,2300);
+}
+$("br").onclick=()=>ans("r");$("bv").onclick=()=>ans("v");
+function finish(){
+$("g1").classList.add("hide");$("g2").classList.add("hide");$("fin").classList.remove("hide");
+const st=er<=2?3:er<=6?2:1;
+$("st").textContent="⭐".repeat(st)+"☆".repeat(3-st);
+$("ft").textContent=st===3?"Графика шебері! 🏅":st===2?"Жақсы нәтиже! 👍":"Тағы бір рет көрейік 💪";
+$("fs").textContent="Ұпайың: "+sc+" / 160 · Қате: "+er+" · 2-деңгейде дұрыс: "+ok2+"/8";
+$("gr").textContent="📝 Баға: "+Math.min(10,Math.max(1,Math.round(sc/160*10)))+" / 10";
+window.scrollTo({top:0,behavior:"smooth"});
+}
+upd();
+</script>
+</body>
+</html>
